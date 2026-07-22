@@ -8,7 +8,7 @@ from emx_dbs.dbs import eval_one
 from emx_dbs.gds_io import create_rectangle_seed_gds, export_candidate_gds, inspect_gds, inspect_raw_gds, write_candidate_gds
 from emx_dbs.masks import LayerGrid, MaskSet
 from emx_dbs.rasterize import rasterize_config
-from emx_dbs.reporting import write_gds_preview, write_layout_preview
+from emx_dbs.reporting import _ordered_preview_layers, write_gds_preview, write_layout_preview
 
 from .conftest import write_config
 
@@ -82,6 +82,38 @@ def test_layout_preview_writes_config_overlays(tmp_path, simple_seed):
     assert out.stat().st_size > 1000
     assert clean.exists()
     assert clean.stat().st_size > 1000
+
+
+def test_layout_preview_draw_order_keeps_top_metal_visible_under_vias(tmp_path, simple_seed):
+    cfg = load_config(
+        write_config(
+            tmp_path,
+            simple_seed,
+            layers={"m9": [39, 60], "m8": [38, 40], "v8": [58, 60]},
+            mutable_regions=[{"name": "window", "layers": ["m9", "m8", "v8"], "bbox_um": [0, 0, 10, 10]}],
+            fixed_regions=[],
+            ports=[],
+            connectivity={
+                "required": [],
+                "forbidden_shorts": [],
+                "vias": [{"name": "v8_stack", "via_layer": "v8", "lower_layer": "m8", "upper_layer": "m9"}],
+            },
+        )
+    )
+    mask = np.ones((1, 1), dtype=bool)
+    maskset = MaskSet(
+        masks={"m9": mask.copy(), "m8": mask.copy(), "v8": mask.copy()},
+        mutable_masks={"m9": mask.copy(), "m8": mask.copy(), "v8": mask.copy()},
+        fixed_masks={"m9": ~mask, "m8": ~mask, "v8": ~mask},
+        fixed_region_masks={"m9": ~mask, "m8": ~mask, "v8": ~mask},
+        grids={
+            "m9": LayerGrid("m9", (0.0, 0.0, 10.0, 10.0), 10.0, (1, 1)),
+            "m8": LayerGrid("m8", (0.0, 0.0, 10.0, 10.0), 10.0, (1, 1)),
+            "v8": LayerGrid("v8", (0.0, 0.0, 10.0, 10.0), 10.0, (1, 1)),
+        },
+    )
+
+    assert [layer for _, layer, _ in _ordered_preview_layers(maskset, cfg)] == ["m8", "m9", "v8"]
 
 
 def test_candidate_export_writes_corner_overlap_bridge(tmp_path, simple_seed):

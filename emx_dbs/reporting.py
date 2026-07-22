@@ -51,9 +51,10 @@ def write_layout_preview(
         return path
 
     fig, ax = plt.subplots(figsize=(8, 8))
-    for idx, (layer, mask) in enumerate(maskset.masks.items()):
+    for idx, layer, mask in _ordered_preview_layers(maskset, cfg):
         grid = maskset.grids[layer]
         color = _preview_color(layer, idx)
+        zorder = _layer_draw_priority(layer, cfg, idx)
         rows, cols = np.nonzero(mask)
         for row, col in zip(rows.tolist(), cols.tolist()):
             x0, y0, x1, y1 = grid.index_bbox(row, col)
@@ -69,6 +70,7 @@ def write_layout_preview(
                         edgecolor="#8a8a8a",
                         linewidth=0.55,
                         hatch="xx",
+                        zorder=zorder,
                     )
                 )
             else:
@@ -81,6 +83,7 @@ def write_layout_preview(
                         alpha=0.82,
                         edgecolor=color,
                         linewidth=0.45,
+                        zorder=zorder,
                     )
                 )
 
@@ -101,6 +104,7 @@ def write_layout_preview(
                         edgecolor="#111111",
                         linewidth=0.7,
                         hatch="///",
+                        zorder=zorder + 0.1,
                     )
                 )
 
@@ -114,6 +118,7 @@ def write_layout_preview(
                         edgecolor="#9c4221",
                         linewidth=0.8,
                         alpha=0.75,
+                        zorder=zorder + 0.2,
                     )
                 )
 
@@ -285,6 +290,40 @@ def _is_via_layer(layer: str, cfg: Optional[OptimizationConfig]) -> bool:
     if cfg is None:
         return False
     return any(via.via_layer == layer for via in cfg.connectivity.vias)
+
+
+def _ordered_preview_layers(maskset: MaskSet, cfg: Optional[OptimizationConfig]) -> List[Tuple[int, str, np.ndarray]]:
+    return sorted(
+        ((idx, layer, mask) for idx, (layer, mask) in enumerate(maskset.masks.items())),
+        key=lambda item: (_layer_draw_priority(item[1], cfg, item[0]), item[0]),
+    )
+
+
+def _layer_draw_priority(layer: str, cfg: Optional[OptimizationConfig], idx: int = 0) -> float:
+    layer_lower = layer.lower()
+    if layer_lower in {"guard", "ground"}:
+        return 0.0
+    if _is_via_layer(layer, cfg):
+        return 100.0 + idx / 1000.0
+    metal_number = _logical_metal_number(layer_lower)
+    if metal_number is not None:
+        return 10.0 + float(metal_number)
+    return 50.0 + idx / 1000.0
+
+
+def _logical_metal_number(layer_lower: str) -> Optional[int]:
+    for prefix in ("metal", "m"):
+        if not layer_lower.startswith(prefix):
+            continue
+        suffix = layer_lower[len(prefix) :]
+        digits = []
+        for char in suffix:
+            if not char.isdigit():
+                break
+            digits.append(char)
+        if digits:
+            return int("".join(digits))
+    return None
 
 
 def _draw_static_seed_polygons(
