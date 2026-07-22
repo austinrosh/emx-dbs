@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, Iterable, List, Tuple
+from typing import Dict, Iterable, List, Tuple, Union
 
 from .masks import MaskSet, save_masks_npz
 from .schemas import BBox, OptimizationConfig
@@ -147,7 +147,7 @@ def export_candidate_gds(maskset: MaskSet, cfg: OptimizationConfig, eval_dir: Pa
     return out
 
 
-def create_rectangle_seed_gds(path: str | Path, top_cell: str, rectangles: Iterable[Tuple[BBox, int, int]]) -> Path:
+def create_rectangle_seed_gds(path: Union[str, Path], top_cell: str, rectangles: Iterable[Tuple[BBox, int, int]]) -> Path:
     gdstk = _require_gdstk()
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)

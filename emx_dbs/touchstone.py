@@ -4,7 +4,7 @@ import math
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Tuple
+from typing import Iterable, Optional, Union
 
 import numpy as np
 
@@ -22,7 +22,7 @@ class SParameters:
     def nports(self) -> int:
         return int(self.s.shape[1])
 
-    def band_mask(self, start_ghz: float | None = None, stop_ghz: float | None = None) -> np.ndarray:
+    def band_mask(self, start_ghz: Optional[float] = None, stop_ghz: Optional[float] = None) -> np.ndarray:
         freq_ghz = self.frequency_hz / 1e9
         mask = np.ones(freq_ghz.shape, dtype=bool)
         if start_ghz is not None:
@@ -38,7 +38,7 @@ class SParameters:
         return 20.0 * np.log10(np.maximum(self.mag(to_port, from_port), 1e-30))
 
 
-def nports_from_path(path: str | Path) -> int:
+def nports_from_path(path: Union[str, Path]) -> int:
     match = _EXT_RE.search(str(path))
     if not match:
         raise ValueError(f"Cannot infer Touchstone port count from {path}")
@@ -66,7 +66,7 @@ def _to_complex(a: float, b: float, fmt: str) -> complex:
     raise ValueError(f"Unsupported Touchstone data format {fmt!r}")
 
 
-def read_touchstone(path: str | Path) -> SParameters:
+def read_touchstone(path: Union[str, Path]) -> SParameters:
     path = Path(path)
     n = nports_from_path(path)
     unit = "ghz"
@@ -109,7 +109,7 @@ def read_touchstone(path: str | Path) -> SParameters:
     return SParameters(freqs, s, z0=z0)
 
 
-def write_touchstone(path: str | Path, frequencies_ghz: Iterable[float], s: np.ndarray, z0: float = 50.0) -> Path:
+def write_touchstone(path: Union[str, Path], frequencies_ghz: Iterable[float], s: np.ndarray, z0: float = 50.0) -> Path:
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     s = np.asarray(s, dtype=complex)

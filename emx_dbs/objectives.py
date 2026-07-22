@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Iterable, Tuple
+from typing import Iterable, Optional, Tuple
 
 import numpy as np
 
@@ -9,7 +9,7 @@ from .schemas import ObjectiveResult
 from .touchstone import read_touchstone
 
 
-def _band(params: dict) -> Tuple[float | None, float | None]:
+def _band(params: dict) -> Tuple[Optional[float], Optional[float]]:
     return params.get("band_start_ghz"), params.get("band_stop_ghz")
 
 

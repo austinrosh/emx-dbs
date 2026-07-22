@@ -4,7 +4,7 @@ import json
 import shutil
 import time
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 import numpy as np
 
@@ -24,8 +24,8 @@ def evaluate_masks(
     maskset: MaskSet,
     run_dir: Path,
     eval_index: int,
-    runner: BaseEmxRunner | None = None,
-    incumbent_fom: float | None = None,
+    runner: Optional[BaseEmxRunner] = None,
+    incumbent_fom: Optional[float] = None,
 ) -> Dict[str, object]:
     runner = runner or select_runner(cfg)
     eval_dir = run_dir / "evaluations" / f"eval_{eval_index:04d}"
@@ -78,7 +78,7 @@ def evaluate_masks(
     return event
 
 
-def run_dbs(config_path: str | Path, resume: bool = False) -> Path:
+def run_dbs(config_path: Union[str, Path], resume: bool = False) -> Path:
     config_path = Path(config_path)
     cfg = load_config(config_path)
     run_dir = prepare_run_dir(cfg, config_path if not resume else None)
@@ -129,7 +129,7 @@ def run_dbs(config_path: str | Path, resume: bool = False) -> Path:
     return run_dir
 
 
-def eval_one(config_path: str | Path) -> Path:
+def eval_one(config_path: Union[str, Path]) -> Path:
     cfg = load_config(config_path)
     run_dir = prepare_run_dir(cfg, config_path)
     maskset = rasterize_config(cfg)
@@ -141,7 +141,7 @@ def eval_one(config_path: str | Path) -> Path:
     return run_dir
 
 
-def resume_run(run_dir: str | Path) -> Path:
+def resume_run(run_dir: Union[str, Path]) -> Path:
     run_dir = Path(run_dir)
     config_path = run_dir / "config.yaml"
     if not config_path.exists():

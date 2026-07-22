@@ -42,12 +42,26 @@ cd <workspace-dir>/emx-dbs
 
 ## 3. Create A Python Environment
 
+Use Python 3.8 or newer. Check the interpreter first:
+
 ```bash
-python3 -m venv .venv
+python3 --version
+command -v python3.8 || true
+command -v python3.11 || true
+command -v python3.10 || true
+```
+
+If the default `python3` is older than 3.8, load a site Python module, use an explicit newer interpreter, or create a user-space conda/micromamba environment. Then create the venv:
+
+```bash
+python3.8 -m venv .venv
 source .venv/bin/activate
+python --version
 python -m pip install -U pip
 python -m pip install -e .
 ```
+
+If `python -m pip install -e .` fails with `No matching distribution found for setuptools>=61`, the venv was almost certainly created with an old Python. Remove `.venv`, select Python 3.8+, and recreate it.
 
 For development and tests:
 

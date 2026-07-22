@@ -6,14 +6,23 @@ The YAML configuration is the source of physical and electrical intent: it defin
 
 ## Install From GitHub
 
-Use Python 3.10 or newer. For normal collaborator use, clone the repository so examples, docs, and scripts are available:
+Use Python 3.8 or newer. Check this before creating the virtual environment:
+
+```bash
+python3 --version
+```
+
+If `python3` is older than 3.8, load or select a newer interpreter first, for example `python3.8`, `python3.10`, `python3.11`, a site module, or a conda environment. A failure like `No matching distribution found for setuptools>=61` usually means the venv was created with an old Python such as 3.6.
+
+For normal collaborator use, clone the repository so examples, docs, and scripts are available:
 
 ```bash
 git clone https://github.com/austinrosh/emx-dbs.git
 cd emx-dbs
 
-python3 -m venv .venv
+python3.8 -m venv .venv
 source .venv/bin/activate
+python --version
 python -m pip install -U pip
 python -m pip install -e ".[dev]"
 ```
@@ -21,7 +30,7 @@ python -m pip install -e ".[dev]"
 For CLI-only use without examples:
 
 ```bash
-python3 -m venv emx-dbs-venv
+python3.8 -m venv emx-dbs-venv
 source emx-dbs-venv/bin/activate
 python -m pip install -U pip
 python -m pip install "emx-dbs @ git+https://github.com/austinrosh/emx-dbs.git"
@@ -64,8 +73,9 @@ Then set up the server-side virtual environment:
 ssh <user>@<emx-host>
 cd <workspace-dir>/emx-dbs
 
-python3 -m venv .venv
+python3.8 -m venv .venv
 source .venv/bin/activate
+python --version
 python -m pip install -U pip
 python -m pip install -e ".[dev]"
 pytest -q
@@ -76,6 +86,8 @@ If the EMX server has no internet access, build or copy a local wheelhouse and i
 ```bash
 python -m pip install --no-index --find-links <wheelhouse-dir> -e ".[dev]"
 ```
+
+If the EMX server only has an older system Python, create a user-space Python 3.8+ environment with conda, micromamba, Miniforge, or your site's module system before running the venv/install commands. Python 3.6 is not supported.
 
 ## Real EMX Setup
 

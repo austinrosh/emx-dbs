@@ -5,14 +5,14 @@ import os
 import tempfile
 from collections import Counter
 from pathlib import Path
-from typing import Dict, Iterable, List
+from typing import Dict, Iterable, List, Union
 
 import numpy as np
 
 from .masks import MaskSet
 
 
-def write_layout_preview(maskset: MaskSet, path: str | Path) -> Path:
+def write_layout_preview(maskset: MaskSet, path: Union[str, Path]) -> Path:
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     try:
@@ -85,7 +85,7 @@ def write_history(run_dir: Path, events: Iterable[Dict[str, object]]) -> Path:
     return path
 
 
-def generate_report(run_dir: str | Path, summary_only: bool = False, top_n: int = 5) -> Dict[str, object]:
+def generate_report(run_dir: Union[str, Path], summary_only: bool = False, top_n: int = 5) -> Dict[str, object]:
     run_dir = Path(run_dir)
     report_dir = run_dir / "report"
     report_dir.mkdir(parents=True, exist_ok=True)

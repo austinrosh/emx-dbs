@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Dict, Iterable, List, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 
@@ -30,7 +30,7 @@ class _DSU:
             self.parent[rb] = ra
 
 
-def _active_node(maskset: MaskSet, layer: str, row: int, col: int) -> Node | None:
+def _active_node(maskset: MaskSet, layer: str, row: int, col: int) -> Optional[Node]:
     mask = maskset.masks.get(layer)
     if mask is None:
         return None
@@ -39,7 +39,7 @@ def _active_node(maskset: MaskSet, layer: str, row: int, col: int) -> Node | Non
     return None
 
 
-def _xy_node(maskset: MaskSet, layer: str, x: float, y: float) -> Node | None:
+def _xy_node(maskset: MaskSet, layer: str, x: float, y: float) -> Optional[Node]:
     grid = maskset.grids.get(layer)
     if grid is None:
         return None
@@ -92,7 +92,7 @@ def _build_connectivity(maskset: MaskSet, cfg: OptimizationConfig) -> _DSU:
     return dsu
 
 
-def _port_nodes(maskset: MaskSet, cfg: OptimizationConfig) -> Dict[str, Node | None]:
+def _port_nodes(maskset: MaskSet, cfg: OptimizationConfig) -> Dict[str, Optional[Node]]:
     return {
         port.name: _xy_node(maskset, port.layer, port.xy_um[0], port.xy_um[1])
         for port in cfg.ports

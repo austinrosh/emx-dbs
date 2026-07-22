@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Dict, Iterable, Tuple
+from typing import Dict, Iterable, Optional, Tuple, Union
 
 import numpy as np
 
@@ -31,7 +31,7 @@ class LayerGrid:
     def ymax(self) -> float:
         return self.bbox_um[3]
 
-    def xy_to_index(self, x_um: float, y_um: float) -> Tuple[int, int] | None:
+    def xy_to_index(self, x_um: float, y_um: float) -> Optional[Tuple[int, int]]:
         col = int(np.floor((x_um - self.xmin) / self.pixel_size_um))
         row = int(np.floor((y_um - self.ymin) / self.pixel_size_um))
         if 0 <= row < self.shape[0] and 0 <= col < self.shape[1]:
@@ -82,7 +82,7 @@ def iter_active_pixels(maskset: MaskSet, layer: str) -> Iterable[Tuple[int, int]
     return zip(rows.tolist(), cols.tolist())
 
 
-def save_masks_npz(maskset: MaskSet, path: str | Path) -> None:
+def save_masks_npz(maskset: MaskSet, path: Union[str, Path]) -> None:
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     arrays = {}
@@ -99,7 +99,7 @@ def save_masks_npz(maskset: MaskSet, path: str | Path) -> None:
     np.savez_compressed(path, **arrays)
 
 
-def load_masks_npz(path: str | Path) -> MaskSet:
+def load_masks_npz(path: Union[str, Path]) -> MaskSet:
     data = np.load(Path(path), allow_pickle=False)
     metadata = json.loads(str(data["__metadata__"]))
     grids = {

@@ -7,7 +7,7 @@ import subprocess
 import time
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Dict, Iterable, List
+from typing import Dict, Iterable, List, Optional
 
 import numpy as np
 
@@ -141,7 +141,7 @@ def _write_emx_script(script: Path, cfg: OptimizationConfig, gds_path: Path, res
     script.chmod(0o755)
 
 
-def _locate_touchstone(results_dir: Path, eval_dir: Path, pattern: str) -> Path | None:
+def _locate_touchstone(results_dir: Path, eval_dir: Path, pattern: str) -> Optional[Path]:
     for root in (results_dir, eval_dir):
         matches = sorted(root.rglob(pattern))
         if matches:
@@ -175,7 +175,7 @@ def validate_emx_environment(cfg: OptimizationConfig) -> Dict[str, object]:
     }
 
 
-def _resolve_executable(cfg: OptimizationConfig) -> str | None:
+def _resolve_executable(cfg: OptimizationConfig) -> Optional[str]:
     if "/" in cfg.emx.executable:
         return cfg.emx.executable if Path(cfg.emx.executable).exists() else None
 
