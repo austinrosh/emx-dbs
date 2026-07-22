@@ -9,7 +9,7 @@ The YAML configuration is the source of physical and electrical intent: it defin
 Use Python 3.10 or newer. For normal collaborator use, clone the repository so examples, docs, and scripts are available:
 
 ```bash
-git clone https://github.com/<github-org-or-user>/emx-dbs.git
+git clone https://github.com/austinrosh/emx-dbs.git
 cd emx-dbs
 
 python3 -m venv .venv
@@ -24,7 +24,7 @@ For CLI-only use without examples:
 python3 -m venv emx-dbs-venv
 source emx-dbs-venv/bin/activate
 python -m pip install -U pip
-python -m pip install "emx-dbs @ git+https://github.com/<github-org-or-user>/emx-dbs.git"
+python -m pip install "emx-dbs @ git+https://github.com/austinrosh/emx-dbs.git"
 ```
 
 Run the tests after a source checkout:
@@ -139,6 +139,7 @@ The repository is configured to ignore virtual environments, run artifacts, loca
 
 See:
 
+- GitHub: https://github.com/austinrosh/emx-dbs
 - `docs/quickstart.md`
 - `docs/configuration_reference.md`
 - `docs/setup_for_emx.md`

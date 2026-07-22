@@ -18,7 +18,7 @@ Examples of `<workspace-dir>` include a project scratch area, shared simulation 
 From GitHub:
 
 ```bash
-git clone <repo-url> emx-dbs
+git clone https://github.com/austinrosh/emx-dbs.git emx-dbs
 cd emx-dbs
 ```
 

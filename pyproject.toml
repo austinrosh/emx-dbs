@@ -26,6 +26,11 @@ rf = ["scikit-rf>=0.29", "scipy>=1.10"]
 [project.scripts]
 emx-dbs = "emx_dbs.cli:app"
 
+[project.urls]
+Homepage = "https://github.com/austinrosh/emx-dbs"
+Repository = "https://github.com/austinrosh/emx-dbs"
+Issues = "https://github.com/austinrosh/emx-dbs/issues"
+
 [tool.setuptools.packages.find]
 include = ["emx_dbs*"]
 
