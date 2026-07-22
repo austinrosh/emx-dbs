@@ -25,7 +25,18 @@ _LAYER_COLORS = {
 _FALLBACK_COLORS = ["#cf4b4b", "#8b4dd3", "#e59f5a", "#2f855a", "#17becf", "#7f7f7f"]
 
 
-def write_layout_preview(maskset: MaskSet, path: Union[str, Path], cfg: Optional[OptimizationConfig] = None) -> Path:
+def write_layout_preview(
+    maskset: MaskSet,
+    path: Union[str, Path],
+    cfg: Optional[OptimizationConfig] = None,
+    *,
+    annotate_geometry: bool = True,
+    show_legend: bool = True,
+    show_title: bool = True,
+    show_fixed_overlay: Optional[bool] = None,
+    show_ports: bool = True,
+    bounds_um: Optional[Tuple[float, float, float, float]] = None,
+) -> Path:
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     try:
@@ -75,7 +86,8 @@ def write_layout_preview(maskset: MaskSet, path: Union[str, Path], cfg: Optional
 
         fixed = maskset.fixed_region_masks.get(layer)
         fixed_values = maskset.fixed_masks.get(layer)
-        if fixed is not None and fixed_values is not None:
+        draw_fixed_overlay = annotate_geometry if show_fixed_overlay is None else show_fixed_overlay
+        if draw_fixed_overlay and fixed is not None and fixed_values is not None:
             fixed_rows, fixed_cols = np.nonzero(fixed & fixed_values)
             for row, col in zip(fixed_rows.tolist(), fixed_cols.tolist()):
                 x0, y0, x1, y1 = grid.index_bbox(row, col)
@@ -108,27 +120,35 @@ def write_layout_preview(maskset: MaskSet, path: Union[str, Path], cfg: Optional
         ax.plot([], [], color=color, linewidth=6, alpha=0.55, label=_layer_label(layer, cfg))
 
     if cfg is not None:
-        _draw_static_seed_polygons(ax, cfg, maskset)
-        _draw_regions(ax, cfg.mutable_regions, "#475569", "mutable", linestyle="--")
-        _draw_regions(ax, cfg.fixed_regions, "#b45309", "fixed/feed", linestyle="-")
-        _draw_ports(ax, cfg)
+        _draw_static_seed_polygons(ax, cfg, maskset, hatch_static=annotate_geometry, add_legend=show_legend)
+        if annotate_geometry:
+            _draw_regions(ax, cfg.mutable_regions, "#475569", "mutable", linestyle="--")
+            _draw_regions(ax, cfg.fixed_regions, "#b45309", "fixed/feed", linestyle="-")
+        if show_ports:
+            _draw_ports(ax, cfg)
 
-        if cfg.drc.allow_same_layer_diagonal_contact and cfg.drc.corner_overlap_bridge:
+        if annotate_geometry and cfg.drc.allow_same_layer_diagonal_contact and cfg.drc.corner_overlap_bridge:
             ax.plot([], [], color="#f6ad55", marker="D", linestyle="", markersize=6, label="corner overlap bridge")
-        if any(mask.any() for mask in maskset.fixed_region_masks.values()):
+        if annotate_geometry and any(mask.any() for mask in maskset.fixed_region_masks.values()):
             ax.plot([], [], color="#111111", linewidth=1.0, label="hatched fixed feed geometry")
 
     ax.set_aspect("equal", adjustable="box")
     ax.set_xlabel("x (um)")
     ax.set_ylabel("y (um)")
-    if cfg is not None:
+    if show_title and cfg is not None:
         ax.set_title(f"{cfg.run.run_id} / {cfg.layout.top_cell}")
-    _set_axis_limits(ax, maskset, cfg)
+    if bounds_um is not None:
+        x0, y0, x1, y1 = bounds_um
+        ax.set_xlim(x0, x1)
+        ax.set_ylim(y0, y1)
+    else:
+        _set_axis_limits(ax, maskset, cfg)
     if cfg is not None:
         _draw_pixel_grid(ax, cfg.layout.pixel_size_um)
     else:
         ax.grid(True, linewidth=0.3, alpha=0.4)
-    _dedupe_legend(ax)
+    if show_legend:
+        _dedupe_legend(ax)
     fig.tight_layout()
     fig.savefig(path, dpi=180)
     plt.close(fig)
@@ -140,6 +160,11 @@ def write_gds_preview(
     path: Union[str, Path],
     top_cell: Optional[str] = None,
     cfg: Optional[OptimizationConfig] = None,
+    *,
+    annotate_geometry: bool = True,
+    show_legend: bool = True,
+    show_title: bool = True,
+    show_ports: bool = True,
 ) -> Path:
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -200,9 +225,11 @@ def write_gds_preview(
         )
 
     if cfg is not None:
-        _draw_regions(ax, cfg.mutable_regions, "#475569", "mutable", linestyle="--")
-        _draw_regions(ax, cfg.fixed_regions, "#b45309", "fixed/feed", linestyle="-")
-        _draw_ports(ax, cfg)
+        if annotate_geometry:
+            _draw_regions(ax, cfg.mutable_regions, "#475569", "mutable", linestyle="--")
+            _draw_regions(ax, cfg.fixed_regions, "#b45309", "fixed/feed", linestyle="-")
+        if show_ports:
+            _draw_ports(ax, cfg)
 
     bbox = flat.bounding_box()
     if bbox is not None:
@@ -218,12 +245,14 @@ def write_gds_preview(
     title = f"{Path(gds_path).name} / {selected.name}"
     if cfg is not None:
         title = f"{cfg.run.run_id} input / {selected.name}"
-    ax.set_title(title)
+    if show_title:
+        ax.set_title(title)
     if cfg is not None:
         _draw_pixel_grid(ax, cfg.layout.pixel_size_um)
     else:
         ax.grid(True, linewidth=0.3, alpha=0.35)
-    _dedupe_legend(ax)
+    if show_legend:
+        _dedupe_legend(ax)
     fig.tight_layout()
     fig.savefig(path, dpi=180)
     plt.close(fig)
@@ -258,7 +287,14 @@ def _is_via_layer(layer: str, cfg: Optional[OptimizationConfig]) -> bool:
     return any(via.via_layer == layer for via in cfg.connectivity.vias)
 
 
-def _draw_static_seed_polygons(ax, cfg: OptimizationConfig, maskset: MaskSet) -> None:
+def _draw_static_seed_polygons(
+    ax,
+    cfg: OptimizationConfig,
+    maskset: MaskSet,
+    *,
+    hatch_static: bool = True,
+    add_legend: bool = True,
+) -> None:
     from matplotlib.patches import Polygon
 
     try:
@@ -292,12 +328,13 @@ def _draw_static_seed_polygons(ax, cfg: OptimizationConfig, maskset: MaskSet) ->
                 edgecolor=color,
                 linewidth=0.9,
                 alpha=0.22 if layer_name != "guard" else 0.34,
-                hatch="//" if layer_name in {"guard", "ground"} else None,
+                hatch="//" if hatch_static and layer_name in {"guard", "ground"} else None,
             )
         )
         drawn[label] = color
-    for label, color in drawn.items():
-        ax.plot([], [], color=color, linewidth=6, alpha=0.55, label=label)
+    if add_legend:
+        for label, color in drawn.items():
+            ax.plot([], [], color=color, linewidth=6, alpha=0.55, label=label)
 
 
 def _draw_regions(ax, regions: Iterable[RegionConfig], color: str, prefix: str, linestyle: str) -> None:

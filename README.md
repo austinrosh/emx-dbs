@@ -166,7 +166,7 @@ emx-dbs generate-dual-core-vco-tank \
 
 Use `--include-guard-ring` to add a fixed lower-metal guard ring around the generated tank and feeds. For the included N16-oriented generator, the guard defaults to M1 GDS `31/0`, overlaps the north/south M9 feed edges by `5 um`, and can add optional `GS`/`GN` guard reference labels with `--include-guard-ports`. Override `--guard-layer`/`--guard-datatype` when your PDK uses a different M1 mapping.
 
-For an end-to-end notebook covering generation, visualization, export, objective skeletons, and symmetry-aware DBS loop scaffolding, open `notebooks/dual_core_vco_tank_end_to_end.ipynb`.
+For an end-to-end notebook covering generation, clean matplotlib visualization, M9-only DBS-style corner-overlap trials, export, objective skeletons, and symmetry-aware DBS loop scaffolding, open `notebooks/dual_core_vco_tank_end_to_end.ipynb`.
 
 For a background run:
 

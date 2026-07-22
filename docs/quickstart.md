@@ -79,7 +79,7 @@ Add `--include-guard-ring` when the seed should include a fixed lower-metal guar
 
 See `docs/dual_core_vco_tanks.md` for the available geometry parameters.
 
-The notebook `notebooks/dual_core_vco_tank_end_to_end.ipynb` walks through the same tank flow with visualization, export, objective-plugin scaffolding, and symmetry-aware DBS loop scaffolding.
+The notebook `notebooks/dual_core_vco_tank_end_to_end.ipynb` walks through the same tank flow with clean visualization, M9-only DBS-style corner-overlap trials, export, objective-plugin scaffolding, and symmetry-aware DBS loop scaffolding.
 
 ## Resume
 

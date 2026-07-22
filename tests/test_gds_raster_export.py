@@ -41,9 +41,12 @@ def test_raw_gds_inspection_and_preview(tmp_path, simple_seed):
     assert info["vertex_counts"]["4"] == 2
 
     out = write_gds_preview(simple_seed, tmp_path / "input.png")
+    clean = write_gds_preview(simple_seed, tmp_path / "input_clean.png", show_legend=False, show_title=False)
 
     assert out.exists()
     assert out.stat().st_size > 1000
+    assert clean.exists()
+    assert clean.stat().st_size > 1000
 
 
 def test_layout_preview_writes_config_overlays(tmp_path, simple_seed):
@@ -64,9 +67,21 @@ def test_layout_preview_writes_config_overlays(tmp_path, simple_seed):
     maskset.masks["metal6"][1, 1] = True
 
     out = write_layout_preview(maskset, tmp_path / "layout.png", cfg)
+    clean = write_layout_preview(
+        maskset,
+        tmp_path / "layout_clean.png",
+        cfg,
+        annotate_geometry=False,
+        show_legend=False,
+        show_title=False,
+        show_fixed_overlay=False,
+        bounds_um=(0.0, 0.0, 10.0, 10.0),
+    )
 
     assert out.exists()
     assert out.stat().st_size > 1000
+    assert clean.exists()
+    assert clean.stat().st_size > 1000
 
 
 def test_candidate_export_writes_corner_overlap_bridge(tmp_path, simple_seed):
