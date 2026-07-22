@@ -1,0 +1,1 @@
+"""Example objective plugins."""

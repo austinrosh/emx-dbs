@@ -1,0 +1,73 @@
+run:
+  run_id: generic_nport_demo
+  output_root: runs
+
+layout:
+  seed_gds: examples/generic_nport/seed.gds
+  top_cell: TOP
+  pixel_size_um: 5.0
+
+layers:
+  metal6: [126, 0]
+
+mutable_regions:
+  - name: main_window
+    layers: [metal6]
+    bbox_um: [-20, -20, 20, 20]
+
+fixed_regions:
+  - name: left_feed
+    layers: [metal6]
+    bbox_um: [-25, -5, -15, 5]
+  - name: right_feed
+    layers: [metal6]
+    bbox_um: [15, -5, 25, 5]
+
+ports:
+  - name: P1
+    layer: metal6
+    xy_um: [-17.5, 0]
+    edge: left
+  - name: P2
+    layer: metal6
+    xy_um: [17.5, 0]
+    edge: right
+
+connectivity:
+  required:
+    - [P1, P2]
+  forbidden_shorts: []
+  vias: []
+
+drc:
+  min_width_um: 5.0
+  min_spacing_um: 5.0
+  allow_same_layer_diagonal_contact: true
+  corner_overlap_bridge: true
+
+emx:
+  backend: fake
+  executable: emx
+  proc_file: /path/to/process.proc
+  env_script: null
+  freq_start_ghz: 1
+  freq_stop_ghz: 20
+  freq_step_ghz: 1
+  timeout_s: 120
+  retries: 1
+
+dbs:
+  max_evaluations: 10
+  max_rejections_in_a_row: 20
+  move_style: probabilistic_independent_layer_flips
+  metal_flip_count_weights: [0.5, 0.3, 0.2]
+  metal_flip_count_values: [1, 2, 3]
+  random_seed: 7
+
+objective:
+  plugin: emx_dbs.objectives:maximize_coupling
+  params:
+    from_port: 1
+    to_port: 2
+    band_start_ghz: 5
+    band_stop_ghz: 15

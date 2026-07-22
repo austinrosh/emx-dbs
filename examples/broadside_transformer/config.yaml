@@ -1,0 +1,87 @@
+run:
+  run_id: broadside_transformer_demo
+  output_root: runs
+
+layout:
+  seed_gds: examples/broadside_transformer/seed.gds
+  top_cell: TOP
+  pixel_size_um: 5.0
+
+layers:
+  metal6: [126, 0]
+  metal5: [125, 0]
+  via5: [225, 0]
+
+mutable_regions:
+  - name: main_window
+    layers: [metal6, metal5, via5]
+    bbox_um: [-40, -40, 40, 40]
+
+fixed_regions:
+  - name: port_feeds
+    layers: [metal6, metal5]
+    bbox_um: [-45, -15, 45, 15]
+
+ports:
+  - name: P1
+    layer: metal6
+    xy_um: [-37.5, 10]
+    edge: left
+  - name: P2
+    layer: metal6
+    xy_um: [-37.5, -10]
+    edge: left
+  - name: P3
+    layer: metal5
+    xy_um: [37.5, 10]
+    edge: right
+  - name: P4
+    layer: metal5
+    xy_um: [37.5, -10]
+    edge: right
+
+connectivity:
+  required:
+    - [P1, P2]
+    - [P3, P4]
+  forbidden_shorts:
+    - [P1, P3]
+    - [P1, P4]
+    - [P2, P3]
+    - [P2, P4]
+  vias:
+    - name: via5_stack
+      via_layer: via5
+      lower_layer: metal5
+      upper_layer: metal6
+
+drc:
+  min_width_um: 5.0
+  min_spacing_um: 5.0
+  allow_same_layer_diagonal_contact: true
+  corner_overlap_bridge: true
+
+emx:
+  backend: fake
+  executable: emx
+  proc_file: /path/to/process.proc
+  env_script: null
+  freq_start_ghz: 1
+  freq_stop_ghz: 80
+  freq_step_ghz: 1
+  timeout_s: 120
+  retries: 1
+
+dbs:
+  max_evaluations: 10
+  max_rejections_in_a_row: 20
+  move_style: probabilistic_independent_layer_flips
+  metal_flip_count_weights: [0.25, 0.25, 0.25, 0.25]
+  metal_flip_count_values: [1, 2, 3, 4]
+  random_seed: 11
+
+objective:
+  plugin: examples.objectives.transformer_k_band:objective
+  params:
+    band_start_ghz: 30
+    band_stop_ghz: 40

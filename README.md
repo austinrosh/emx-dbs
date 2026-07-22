@@ -1,0 +1,144 @@
+# emx-dbs
+
+`emx-dbs` is a standalone Python tool for direct-binary-search optimization of passive EM layouts from arbitrary GDS seeds. 
+
+The YAML configuration is the source of physical and electrical intent: it defines editable layers and windows, fixed regions, ports, required connectivity, forbidden shorts, EMX setup, DBS move policy, and the objective plugin.
+
+## Install From GitHub
+
+Use Python 3.10 or newer. For normal collaborator use, clone the repository so examples, docs, and scripts are available:
+
+```bash
+git clone https://github.com/<github-org-or-user>/emx-dbs.git
+cd emx-dbs
+
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -U pip
+python -m pip install -e ".[dev]"
+```
+
+For CLI-only use without examples:
+
+```bash
+python3 -m venv emx-dbs-venv
+source emx-dbs-venv/bin/activate
+python -m pip install -U pip
+python -m pip install "emx-dbs @ git+https://github.com/<github-org-or-user>/emx-dbs.git"
+```
+
+Run the tests after a source checkout:
+
+```bash
+pytest -q
+```
+
+## Quick Start With The Fake Solver
+
+```bash
+emx-dbs validate-env examples/generic_nport/config.yaml
+emx-dbs inspect-gds examples/generic_nport/config.yaml
+emx-dbs eval-one examples/generic_nport/config.yaml
+emx-dbs run examples/generic_nport/config.yaml
+emx-dbs report runs/generic_nport_demo
+```
+
+The bundled examples use the fake EMX backend by default so the end-to-end flow can be tested without Cadence/EMX. Set `emx.backend: real` and provide valid local EMX paths for actual solver runs.
+
+## Copy To An EMX Server With rsync
+
+If the solver host cannot clone from GitHub, copy the checkout from your workstation:
+
+```bash
+rsync -av \
+  --exclude .git \
+  --exclude .venv \
+  --exclude runs \
+  --exclude __pycache__ \
+  ./ <user>@<emx-host>:<workspace-dir>/emx-dbs/
+```
+
+Then set up the server-side virtual environment:
+
+```bash
+ssh <user>@<emx-host>
+cd <workspace-dir>/emx-dbs
+
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -U pip
+python -m pip install -e ".[dev]"
+pytest -q
+```
+
+If the EMX server has no internet access, build or copy a local wheelhouse and install from it:
+
+```bash
+python -m pip install --no-index --find-links <wheelhouse-dir> -e ".[dev]"
+```
+
+## Real EMX Setup
+
+Create a local, untracked setup script for site modules, paths, and license variables:
+
+```bash
+cat > setup_emx_env.sh <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+# module load <cadence-or-emx-module>
+# source <site-cadence-setup.sh>
+# export CDS_LIC_FILE=<license-server>
+# export LM_LICENSE_FILE=<license-server>
+EOF
+chmod +x setup_emx_env.sh
+```
+
+Create a private local study config from an example:
+
+```bash
+cp examples/generic_nport/config.yaml my_study.local.yaml
+```
+
+Set the real backend and local EMX paths:
+
+```yaml
+emx:
+  backend: real
+  executable: emx
+  proc_file: <absolute-path-to-process-file.proc>
+  env_script: <absolute-path-to-setup_emx_env.sh>
+```
+
+Validate and run one candidate before launching a long DBS job:
+
+```bash
+emx-dbs validate-env my_study.local.yaml
+emx-dbs inspect-gds my_study.local.yaml
+emx-dbs rasterize my_study.local.yaml
+emx-dbs eval-one my_study.local.yaml
+```
+
+For a background run:
+
+```bash
+nohup emx-dbs run my_study.local.yaml > /tmp/emx_dbs_run.log 2>&1 & echo $!
+emx-dbs report runs/<RUN_ID> --summary-only
+emx-dbs resume runs/<RUN_ID>
+```
+
+## What Not To Commit
+
+The repository is configured to ignore virtual environments, run artifacts, local study configs, local setup scripts, logs, and private site notes. Keep these files local:
+
+- `.venv/`
+- `runs/`
+- `*.local.yaml`
+- `setup_emx_env.sh`
+- `docs/private/`
+- process files, license values, and site-specific host paths
+
+See:
+
+- `docs/quickstart.md`
+- `docs/configuration_reference.md`
+- `docs/setup_for_emx.md`
