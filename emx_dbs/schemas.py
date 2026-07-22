@@ -34,6 +34,8 @@ class LayoutConfig(StrictModel):
     seed_gds: Path
     top_cell: str
     pixel_size_um: float
+    preserve_unconfigured_layers: bool = True
+    seed_vias_from_overlap: bool = False
 
 
 class RegionConfig(StrictModel):

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, Iterable, List, Tuple, Union
+from typing import Dict, Iterable, List, Optional, Tuple, Union
 
 from .masks import MaskSet, save_masks_npz
 from .schemas import BBox, OptimizationConfig
@@ -49,10 +49,95 @@ def inspect_gds(cfg: OptimizationConfig) -> Dict[str, object]:
         for poly in flat.polygons:
             key = (int(poly.layer), int(poly.datatype))
             layers[key] = layers.get(key, 0) + 1
+    configured = {
+        name: layers.get((int(layer), int(datatype)), 0)
+        for name, (layer, datatype) in cfg.layers.items()
+    }
     return {
         "cells": cells,
         "top_cell_found": top is not None,
         "polygon_counts": {f"{layer}/{datatype}": count for (layer, datatype), count in layers.items()},
+        "configured_layer_counts": configured,
+    }
+
+
+def inspect_raw_gds(gds_path: Union[str, Path], top_cell: Optional[str] = None) -> Dict[str, object]:
+    gdstk = _require_gdstk()
+    gds_path = Path(gds_path)
+    lib = gdstk.read_gds(str(gds_path))
+    cells = [cell.name for cell in lib.cells]
+    selected = _select_cell(lib, top_cell)
+    layers: Dict[Tuple[int, int], int] = {}
+    vertex_counts: Dict[int, int] = {}
+    layer_stats: Dict[Tuple[int, int], Dict[str, object]] = {}
+    label_counts: Dict[Tuple[int, int, str], int] = {}
+    bbox = None
+    if selected is not None:
+        flat = selected.copy(selected.name + "__INSPECT")
+        flat.flatten()
+        bbox = _bbox_to_list(flat.bounding_box())
+        for poly in flat.polygons:
+            key = (int(poly.layer), int(poly.datatype))
+            layers[key] = layers.get(key, 0) + 1
+            vertex_count = len(poly.points)
+            vertex_counts[vertex_count] = vertex_counts.get(vertex_count, 0) + 1
+            _update_layer_stats(layer_stats, key, poly)
+        for label in flat.labels:
+            key = (int(label.layer), int(label.texttype), str(label.text))
+            label_counts[key] = label_counts.get(key, 0) + 1
+    return {
+        "gds": str(gds_path),
+        "cells": cells,
+        "top_cell": selected.name if selected is not None else None,
+        "top_cell_found": selected is not None,
+        "bbox_um": bbox,
+        "polygon_counts": {f"{layer}/{datatype}": count for (layer, datatype), count in sorted(layers.items())},
+        "vertex_counts": {str(vertices): count for vertices, count in sorted(vertex_counts.items())},
+        "label_counts": {
+            f"{layer}/{texttype}:{text}": count
+            for (layer, texttype, text), count in sorted(label_counts.items())
+        },
+        "layer_stats": _format_layer_stats(layer_stats),
+    }
+
+
+def _select_cell(lib, top_cell: Optional[str]):
+    if top_cell is not None:
+        return {cell.name: cell for cell in lib.cells}.get(top_cell)
+    top_levels = lib.top_level()
+    if top_levels:
+        return top_levels[0]
+    return lib.cells[0] if lib.cells else None
+
+
+def _bbox_to_list(bbox) -> Optional[List[List[float]]]:
+    if bbox is None:
+        return None
+    return [[float(bbox[0][0]), float(bbox[0][1])], [float(bbox[1][0]), float(bbox[1][1])]]
+
+
+def _update_layer_stats(stats: Dict[Tuple[int, int], Dict[str, object]], key: Tuple[int, int], poly) -> None:
+    xs = poly.points[:, 0]
+    ys = poly.points[:, 1]
+    bbox = [float(xs.min()), float(ys.min()), float(xs.max()), float(ys.max())]
+    entry = stats.setdefault(key, {"area_um2": 0.0, "bbox_um": bbox})
+    entry["area_um2"] = float(entry["area_um2"]) + abs(float(poly.area()))
+    existing = entry["bbox_um"]
+    entry["bbox_um"] = [
+        min(float(existing[0]), bbox[0]),
+        min(float(existing[1]), bbox[1]),
+        max(float(existing[2]), bbox[2]),
+        max(float(existing[3]), bbox[3]),
+    ]
+
+
+def _format_layer_stats(stats: Dict[Tuple[int, int], Dict[str, object]]) -> Dict[str, object]:
+    return {
+        f"{layer}/{datatype}": {
+            "area_um2": round(float(entry["area_um2"]), 6),
+            "bbox_um": [round(float(value), 6) for value in entry["bbox_um"]],
+        }
+        for (layer, datatype), entry in sorted(stats.items())
     }
 
 
@@ -82,7 +167,8 @@ def preserved_seed_polygons(cfg: OptimizationConfig) -> List[object]:
         key = (int(poly.layer), int(poly.datatype))
         layer_name = layer_lookup.get(key)
         if layer_name is None:
-            preserved.append(_copy_polygon(poly))
+            if cfg.layout.preserve_unconfigured_layers:
+                preserved.append(_copy_polygon(poly))
             continue
         windows = _mutable_window_rectangles(cfg, layer_name)
         if not windows:
@@ -120,11 +206,10 @@ def _bridge_rectangles(maskset: MaskSet, cfg: OptimizationConfig, layer_name: st
     return polygons
 
 
-def export_candidate_gds(maskset: MaskSet, cfg: OptimizationConfig, eval_dir: Path) -> Path:
+def write_candidate_gds(maskset: MaskSet, cfg: OptimizationConfig, path: Union[str, Path]) -> Path:
     gdstk = _require_gdstk()
-    design_dir = eval_dir / "design"
-    design_dir.mkdir(parents=True, exist_ok=True)
-    save_masks_npz(maskset, design_dir / "masks.npz")
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
 
     lib = gdstk.Library(unit=1e-6, precision=1e-9)
     cell = lib.new_cell(cfg.layout.top_cell)
@@ -145,9 +230,15 @@ def export_candidate_gds(maskset: MaskSet, cfg: OptimizationConfig, eval_dir: Pa
     for label in _port_labels(cfg):
         cell.add(label)
 
-    out = design_dir / "candidate.gds"
-    lib.write_gds(str(out))
-    return out
+    lib.write_gds(str(path))
+    return path
+
+
+def export_candidate_gds(maskset: MaskSet, cfg: OptimizationConfig, eval_dir: Path) -> Path:
+    design_dir = eval_dir / "design"
+    design_dir.mkdir(parents=True, exist_ok=True)
+    save_masks_npz(maskset, design_dir / "masks.npz")
+    return write_candidate_gds(maskset, cfg, design_dir / "candidate.gds")
 
 
 def _port_labels(cfg: OptimizationConfig) -> List[object]:

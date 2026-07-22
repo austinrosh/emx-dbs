@@ -94,9 +94,29 @@ def _build_connectivity(maskset: MaskSet, cfg: OptimizationConfig) -> _DSU:
 
 def _port_nodes(maskset: MaskSet, cfg: OptimizationConfig) -> Dict[str, Optional[Node]]:
     return {
-        port.name: _xy_node(maskset, port.layer, port.xy_um[0], port.xy_um[1])
+        port.name: _port_node(maskset, port)
         for port in cfg.ports
     }
+
+
+def _port_node(maskset: MaskSet, port: PortConfig) -> Optional[Node]:
+    node = _xy_node(maskset, port.layer, port.xy_um[0], port.xy_um[1])
+    if node is not None or port.edge is None:
+        return node
+
+    grid = maskset.grids.get(port.layer)
+    if grid is None:
+        return None
+    x, y = port.xy_um
+    inward = grid.pixel_size_um / 2.0
+    edge_offsets = {
+        "left": (inward, 0.0),
+        "right": (-inward, 0.0),
+        "bottom": (0.0, inward),
+        "top": (0.0, -inward),
+    }
+    dx, dy = edge_offsets[port.edge]
+    return _xy_node(maskset, port.layer, x + dx, y + dy)
 
 
 def _check_fixed(maskset: MaskSet) -> List[str]:
@@ -177,8 +197,12 @@ def check_legality(maskset: MaskSet, cfg: OptimizationConfig) -> LegalityResult:
 
     dsu = _build_connectivity(maskset, cfg)
     ports = _port_nodes(maskset, cfg)
+    port_cfgs = {port.name: port for port in cfg.ports}
     for port_name, node in ports.items():
         if node is None:
+            port = port_cfgs.get(port_name)
+            if port is not None and port.layer not in maskset.grids:
+                continue
             reasons.append(f"port_not_on_active_pixel:{port_name}")
 
     for group in cfg.connectivity.required:

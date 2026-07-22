@@ -48,7 +48,7 @@ def evaluate_masks(
         return event
 
     gds_path = export_candidate_gds(maskset, cfg, eval_dir)
-    write_layout_preview(maskset, eval_dir / "design" / "layout.png")
+    write_layout_preview(maskset, eval_dir / "design" / "layout.png", cfg)
     emx_result = runner.run(cfg, eval_dir, gds_path, maskset, {"eval_index": eval_index})
     event.update({"emx_success": emx_result.success, "emx_reason": emx_result.reason, "emx_attempts": emx_result.attempts})
     if not emx_result.success or emx_result.touchstone_path is None:
@@ -97,7 +97,7 @@ def run_dbs(config_path: Union[str, Path], resume: bool = False) -> Path:
     else:
         current = rasterize_config(cfg)
         save_masks_npz(current, run_dir / "seed" / "masks.npz")
-        write_layout_preview(current, run_dir / "seed" / "layout.png")
+        write_layout_preview(current, run_dir / "seed" / "layout.png", cfg)
         best_fom = -1e30
         best_eval = None
         rejections_in_a_row = 0

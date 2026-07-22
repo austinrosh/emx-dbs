@@ -42,6 +42,14 @@ Run the tests after a source checkout:
 pytest -q
 ```
 
+To use the example notebooks from the same virtual environment:
+
+```bash
+python -m pip install -e ".[dev,notebook]"
+python -m ipykernel install --user --name emx-dbs --display-name "Python 3 (emx-dbs)"
+jupyter notebook
+```
+
 ## Quick Start With The Fake Solver
 
 ```bash
@@ -134,9 +142,31 @@ Validate and run one candidate before launching a long DBS job:
 ```bash
 emx-dbs validate-env my_study.local.yaml
 emx-dbs inspect-gds my_study.local.yaml
+emx-dbs preview-input my_study.local.yaml
 emx-dbs rasterize my_study.local.yaml
 emx-dbs eval-one my_study.local.yaml
 ```
+
+Useful GDS review/conversion helpers:
+
+```bash
+emx-dbs inspect-raw-gds path/to/layout.gds --top-cell TOP
+emx-dbs preview-gds path/to/layout.gds --top-cell TOP --output local/previews/input.png
+emx-dbs export-square-seed my_study.local.yaml --output local/square_seed.gds --preview-output local/square_seed.png
+```
+
+For the first supported structure family, generate a dual-core VCO tank seed:
+
+```bash
+emx-dbs generate-dual-core-vco-tank \
+  --output local/tanks/ring33_square.gds \
+  --config-output local/tanks/ring33_square.local.yaml \
+  --preview-output local/tanks/ring33_square.png
+```
+
+Use `--include-guard-ring` to add a fixed lower-metal guard ring around the generated tank and feeds. For the included N16-oriented generator, the guard defaults to M1 GDS `31/0`, overlaps the north/south M9 feed edges by `5 um`, and can add optional `GS`/`GN` guard reference labels with `--include-guard-ports`. Override `--guard-layer`/`--guard-datatype` when your PDK uses a different M1 mapping.
+
+For an end-to-end notebook covering generation, visualization, export, objective skeletons, and symmetry-aware DBS loop scaffolding, open `notebooks/dual_core_vco_tank_end_to_end.ipynb`.
 
 For a background run:
 
@@ -163,3 +193,5 @@ See:
 - `docs/quickstart.md`
 - `docs/configuration_reference.md`
 - `docs/setup_for_emx.md`
+- `docs/dual_core_vco_tanks.md`
+- `notebooks/dual_core_vco_tank_end_to_end.ipynb`

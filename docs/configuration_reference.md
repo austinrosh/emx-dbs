@@ -14,6 +14,8 @@ The YAML file is authoritative. `emx-dbs` does not infer nets from arbitrary GDS
 - `seed_gds`: input GDS.
 - `top_cell`: top cell to flatten/import.
 - `pixel_size_um`: DBS pixel size.
+- `preserve_unconfigured_layers`: keep GDS layers that are not listed in `layers` when exporting candidates. Defaults to `true`; set to `false` for strict studies that should emit only configured layers.
+- `seed_vias_from_overlap`: initialize configured via masks anywhere their lower and upper metal masks overlap. Defaults to `false`; useful when an input seed has adjacent metals but omits the via layer.
 
 `layers`
 
@@ -111,3 +113,51 @@ runs/RUN_ID/
       results/metrics.json
   report/
 ```
+
+`design/layout.png` is a diagnostic preview of the generated candidate. It shows active pixels by logical layer, GDS layer/datatype in the legend, fixed/feed geometry with hatching, mutable and fixed region outlines, configured port names/locations, and corner-overlap bridge patches when that DRC mode is enabled.
+
+## Useful GDS Utilities
+
+Inspect any raw GDS without a config:
+
+```bash
+emx-dbs inspect-raw-gds path/to/layout.gds --top-cell TOP
+```
+
+Preview any raw GDS:
+
+```bash
+emx-dbs preview-gds path/to/layout.gds --top-cell TOP --output local/previews/input.png
+```
+
+Preview the configured input seed with logical layer names, regions, and ports overlaid:
+
+```bash
+emx-dbs preview-input my_study.local.yaml --output local/previews/configured_input.png
+```
+
+Export a rasterized square-pixel seed GDS without running EMX:
+
+```bash
+emx-dbs export-square-seed my_study.local.yaml \
+  --output local/square_seed.gds \
+  --preview-output local/square_seed.png
+```
+
+For seeds that contain M8/M9 but no V8, use `layout.seed_vias_from_overlap: true` in the config, or pass `--synthesize-vias-from-overlap` to `export-square-seed`.
+
+Generate a parametric dual-core VCO tank seed:
+
+```bash
+emx-dbs generate-dual-core-vco-tank \
+  --output local/tanks/ring33_square.gds \
+  --config-output local/tanks/ring33_square.local.yaml \
+  --preview-output local/tanks/ring33_square.png
+```
+
+Guard-ring options for that generator:
+
+- `--include-guard-ring`: add a fixed lower-metal guard ring.
+- `--guard-layer`, `--guard-datatype`: select the guard GDS layer/datatype. Defaults to N16 M1 `31/0`.
+- `--guard-feed-overlap-um`: overlap the north/south guard bars with the M9 feed edges. Defaults to `5`.
+- `--include-guard-ports`: add static guard reference ports `GS` and `GN`.

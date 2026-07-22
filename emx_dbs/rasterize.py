@@ -121,4 +121,34 @@ def rasterize_config(cfg: OptimizationConfig) -> MaskSet:
         fixed_masks[layer] = seed & fixed_region
         fixed_region_masks[layer] = fixed_region
 
+    if cfg.layout.seed_vias_from_overlap:
+        _seed_vias_from_overlap(masks, grids, cfg)
+        for layer, fixed_region in fixed_region_masks.items():
+            fixed_masks[layer] = masks[layer] & fixed_region
+
     return apply_fixed_masks(MaskSet(masks, mutable_masks, fixed_masks, fixed_region_masks, grids))
+
+
+def _seed_vias_from_overlap(
+    masks: Dict[str, np.ndarray],
+    grids: Dict[str, LayerGrid],
+    cfg: OptimizationConfig,
+) -> None:
+    for via in cfg.connectivity.vias:
+        if via.via_layer not in masks or via.lower_layer not in masks or via.upper_layer not in masks:
+            continue
+        via_mask = masks[via.via_layer]
+        via_grid = grids[via.via_layer]
+        lower_mask = masks[via.lower_layer]
+        upper_mask = masks[via.upper_layer]
+        lower_grid = grids[via.lower_layer]
+        upper_grid = grids[via.upper_layer]
+        rows, cols = np.indices(via_grid.shape)
+        for row, col in zip(rows.ravel().tolist(), cols.ravel().tolist()):
+            x, y = via_grid.index_center(row, col)
+            lower_idx = lower_grid.xy_to_index(x, y)
+            upper_idx = upper_grid.xy_to_index(x, y)
+            if lower_idx is None or upper_idx is None:
+                continue
+            if lower_mask[lower_idx] and upper_mask[upper_idx]:
+                via_mask[row, col] = True
