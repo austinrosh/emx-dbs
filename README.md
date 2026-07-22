@@ -122,6 +122,13 @@ emx:
   env_script: <absolute-path-to-setup_emx_env.sh>
 ```
 
+If your process file is encrypted, put the process key only in an ignored local config:
+
+```yaml
+emx:
+  key: <process-file-key>  # emits --key=<process-file-key>
+```
+
 Validate and run one candidate before launching a long DBS job:
 
 ```bash

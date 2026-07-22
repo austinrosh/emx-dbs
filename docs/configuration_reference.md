@@ -62,6 +62,7 @@ When diagonal contact and bridges are enabled, same-layer diagonal-only pixel co
 - `env_script`: optional shell script sourced before EMX.
 - `freq_start_ghz`, `freq_stop_ghz`, `freq_step_ghz`
 - `timeout_s`, `retries`
+- `key`: optional EMX process decryption key. When set, the generated EMX command includes `--key=<value>`. Use only in ignored local configs.
 - `extra_args`: appended to the generated EMX command.
 
 `dbs`

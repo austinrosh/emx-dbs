@@ -74,6 +74,7 @@ class EMXConfig(StrictModel):
     executable: str = "emx"
     proc_file: Optional[Path] = None
     env_script: Optional[Path] = None
+    key: Optional[str] = None
     freq_start_ghz: float
     freq_stop_ghz: float
     freq_step_ghz: float

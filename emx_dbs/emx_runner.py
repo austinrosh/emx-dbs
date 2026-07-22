@@ -121,6 +121,7 @@ def _write_emx_script(script: Path, cfg: OptimizationConfig, gds_path: Path, res
     for port in cfg.ports:
         if port.width_um is not None:
             internal_args.append(f"--internal={port.name},{port.width_um:g}")
+    key_args = [f"--key={cfg.emx.key}"] if cfg.emx.key else []
     extra_args = list(cfg.emx.extra_args)
     freqs_hz = [freq_ghz * 1e9 for freq_ghz in frequency_sweep_ghz(cfg)]
     cmd_parts = [
@@ -129,6 +130,7 @@ def _write_emx_script(script: Path, cfg: OptimizationConfig, gds_path: Path, res
         f"--s-file={touchstone}",
         "--include-command-line",
         "--verbose=2",
+        *key_args,
         *internal_args,
         *extra_args,
         str(gds_path),

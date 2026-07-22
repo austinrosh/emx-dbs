@@ -109,6 +109,13 @@ emx:
   env_script: <absolute-path-to-setup_emx_env.sh>
 ```
 
+If EMX reports that encrypted process data requires a key, add it only to an ignored local config:
+
+```yaml
+emx:
+  key: <process-file-key>
+```
+
 Keep real hostnames, internal process paths, and license server values in local files covered by `.gitignore`.
 
 ## 5. Create A Study Config
