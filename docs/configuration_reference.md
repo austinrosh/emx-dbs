@@ -35,7 +35,7 @@ Physical windows restored after every mutation. Fixed geometry is raster-preserv
 
 `ports`
 
-Named ports with logical layer and physical coordinate. Port coordinates are used for explicit connectivity checks and EMX command generation.
+Named ports with logical layer and physical coordinate. Port coordinates are used for explicit connectivity checks, GDS label export, and EMX command generation. If `width_um` is set, `emx-dbs` emits an EMX internal-port option such as `--internal=P1,4`.
 
 `connectivity`
 

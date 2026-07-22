@@ -28,10 +28,12 @@ ports:
     layer: metal6
     xy_um: [-17.5, 0]
     edge: left
+    width_um: 4.0
   - name: P2
     layer: metal6
     xy_um: [17.5, 0]
     edge: right
+    width_um: 4.0
 
 connectivity:
   required:

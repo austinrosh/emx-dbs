@@ -96,7 +96,8 @@ Create a local, untracked setup script for site modules, paths, and license vari
 ```bash
 cat > setup_emx_env.sh <<'EOF'
 #!/usr/bin/env bash
-set -euo pipefail
+# Source-safe local setup. Avoid `set -euo pipefail` here because this file
+# may be sourced by interactive shells and generated EMX run scripts.
 # module load <cadence-or-emx-module>
 # source <site-cadence-setup.sh>
 # export CDS_LIC_FILE=<license-server>

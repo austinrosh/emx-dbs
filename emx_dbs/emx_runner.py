@@ -117,25 +117,33 @@ def _write_emx_script(script: Path, cfg: OptimizationConfig, gds_path: Path, res
         raise ValueError("emx.proc_file is required when emx.backend is real")
     nports = max(1, len(cfg.ports))
     touchstone = results_dir / f"result.s{nports}p"
-    port_args = " ".join(
-        f"--port {port.name}:{port.layer}:{port.xy_um[0]},{port.xy_um[1]}:{port.edge or 'edge'}"
-        for port in cfg.ports
-    )
-    extra = " ".join(cfg.emx.extra_args)
-    env_line = f"source {cfg.emx.env_script}\n" if cfg.emx.env_script else ""
+    internal_args = []
+    for port in cfg.ports:
+        if port.width_um is not None:
+            internal_args.append(f"--internal={port.name},{port.width_um:g}")
+    extra_args = list(cfg.emx.extra_args)
+    freqs_hz = [freq_ghz * 1e9 for freq_ghz in frequency_sweep_ghz(cfg)]
+    cmd_parts = [
+        cfg.emx.executable,
+        "--touchstone",
+        f"--s-file={touchstone}",
+        "--include-command-line",
+        "--verbose=2",
+        *internal_args,
+        *extra_args,
+        str(gds_path),
+        cfg.layout.top_cell,
+        str(proc),
+        *[f"{freq_hz:.12g}" for freq_hz in freqs_hz],
+    ]
+    command = " ".join(shlex.quote(str(part)) for part in cmd_parts)
+    env_line = f"source {shlex.quote(str(cfg.emx.env_script))}\n" if cfg.emx.env_script else ""
     script.write_text(
         "#!/usr/bin/env bash\n"
         "set -euo pipefail\n"
+        f"mkdir -p {shlex.quote(str(results_dir))}\n"
         f"{env_line}"
-        f"{cfg.emx.executable} "
-        f"--proc {proc} "
-        f"--gds {gds_path} "
-        f"--top {cfg.layout.top_cell} "
-        f"--freq-start-ghz {cfg.emx.freq_start_ghz:g} "
-        f"--freq-stop-ghz {cfg.emx.freq_stop_ghz:g} "
-        f"--freq-step-ghz {cfg.emx.freq_step_ghz:g} "
-        f"--touchstone {touchstone} "
-        f"{port_args} {extra}\n",
+        f"{command}\n",
         encoding="utf-8",
     )
     script.chmod(0o755)

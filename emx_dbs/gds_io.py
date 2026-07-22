@@ -142,9 +142,31 @@ def export_candidate_gds(maskset: MaskSet, cfg: OptimizationConfig, eval_dir: Pa
                 pass
             cell.add(*shapes)
 
+    for label in _port_labels(cfg):
+        cell.add(label)
+
     out = design_dir / "candidate.gds"
     lib.write_gds(str(out))
     return out
+
+
+def _port_labels(cfg: OptimizationConfig) -> List[object]:
+    gdstk = _require_gdstk()
+    labels = []
+    for port in cfg.ports:
+        if port.layer not in cfg.layers:
+            continue
+        layer, datatype = cfg.layers[port.layer]
+        labels.append(
+            gdstk.Label(
+                port.name,
+                port.xy_um,
+                anchor="o",
+                layer=layer,
+                texttype=datatype,
+            )
+        )
+    return labels
 
 
 def create_rectangle_seed_gds(path: Union[str, Path], top_cell: str, rectangles: Iterable[Tuple[BBox, int, int]]) -> Path:

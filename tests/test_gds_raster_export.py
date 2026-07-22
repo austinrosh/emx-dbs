@@ -23,6 +23,8 @@ def test_gds_export_round_trip(tmp_path, simple_seed):
     out = export_candidate_gds(maskset, cfg, tmp_path / "eval_0000")
     lib = gdstk.read_gds(str(out))
     assert "TOP" in {cell.name for cell in lib.cells}
+    top = {cell.name: cell for cell in lib.cells}["TOP"]
+    assert {label.text for label in top.labels} == {"P1", "P2"}
     info = inspect_gds(cfg)
     assert info["top_cell_found"] is True
 

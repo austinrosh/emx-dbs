@@ -84,11 +84,19 @@ If EMX requires modules, license variables, or site shell initialization, put th
 ```bash
 cat > setup_emx_env.sh <<'EOF'
 #!/usr/bin/env bash
+# Source-safe local setup. Avoid `set -euo pipefail` here because this file
+# may be sourced by interactive shells and generated EMX run scripts.
 # module load <cadence-or-emx-module>
 # export CDS_LIC_FILE=<license-server>
 # export LM_LICENSE_FILE=<license-server>
 EOF
 chmod +x setup_emx_env.sh
+```
+
+Verify setup scripts in a subshell first so a failing module command cannot close your current terminal:
+
+```bash
+bash -lc 'source ./setup_emx_env.sh && which emx && emx -h | head'
 ```
 
 Reference that wrapper from your study config:
