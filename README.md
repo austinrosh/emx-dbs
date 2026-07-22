@@ -168,6 +168,8 @@ Use `--include-guard-ring` to add a fixed lower-metal guard ring around the gene
 
 For an end-to-end notebook covering generation, clean matplotlib visualization, M9-only DBS-style corner-overlap trials, export, objective skeletons, and symmetry-aware DBS loop scaffolding, open `notebooks/dual_core_vco_tank_end_to_end.ipynb`.
 
+For a broader GDS workflow notebook covering raw GDS import/inspection, custom GDS generation, candidate export, EMX port naming conventions, process-file layer mapping, and generated EMX CLI command structure, open `notebooks/gds_import_generation_export_emx_ports.ipynb`.
+
 For a background run:
 
 ```bash
@@ -195,3 +197,4 @@ See:
 - `docs/setup_for_emx.md`
 - `docs/dual_core_vco_tanks.md`
 - `notebooks/dual_core_vco_tank_end_to_end.ipynb`
+- `notebooks/gds_import_generation_export_emx_ports.ipynb`
