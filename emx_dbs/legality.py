@@ -189,11 +189,34 @@ def _check_min_spacing(maskset: MaskSet, cfg: OptimizationConfig) -> List[str]:
     return reasons
 
 
+def _check_via_enclosure(maskset: MaskSet, cfg: OptimizationConfig) -> List[str]:
+    reasons: List[str] = []
+    for via in cfg.connectivity.vias:
+        via_mask = maskset.masks.get(via.via_layer)
+        via_grid = maskset.grids.get(via.via_layer)
+        if via_mask is None or via_grid is None:
+            continue
+        rows, cols = np.nonzero(via_mask)
+        for row, col in zip(rows.tolist(), cols.tolist()):
+            x, y = via_grid.index_center(row, col)
+            missing: List[str] = []
+            if _xy_node(maskset, via.lower_layer, x, y) is None:
+                missing.append(via.lower_layer)
+            if _xy_node(maskset, via.upper_layer, x, y) is None:
+                missing.append(via.upper_layer)
+            if missing:
+                reasons.append(
+                    f"via_not_enclosed:{via.name}:{via.via_layer}:{row},{col}:missing={','.join(missing)}"
+                )
+    return reasons
+
+
 def check_legality(maskset: MaskSet, cfg: OptimizationConfig) -> LegalityResult:
     reasons: List[str] = []
     reasons.extend(_check_fixed(maskset))
     reasons.extend(_check_min_width(maskset, cfg))
     reasons.extend(_check_min_spacing(maskset, cfg))
+    reasons.extend(_check_via_enclosure(maskset, cfg))
 
     dsu = _build_connectivity(maskset, cfg)
     ports = _port_nodes(maskset, cfg)

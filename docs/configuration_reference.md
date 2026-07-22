@@ -43,7 +43,7 @@ Named ports with logical layer and physical coordinate. Port coordinates are use
 
 - `required`: groups of port names that must be connected.
 - `forbidden_shorts`: groups of port names that must not be shorted.
-- `vias`: explicit via rules connecting one via layer to two metal layers. Interlayer connectivity is never implicit.
+- `vias`: explicit via rules connecting one via layer to two metal layers. Interlayer connectivity is never implicit. Every active via pixel must also have active lower and upper metal at the via center; otherwise legality rejects the candidate with `via_not_enclosed`.
 
 `drc`
 
