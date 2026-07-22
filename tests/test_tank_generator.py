@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import gdstk
+import numpy as np
 
 from emx_dbs.config import load_config
 from emx_dbs.gds_io import inspect_raw_gds, write_candidate_gds
 from emx_dbs.legality import check_legality
+from emx_dbs.mutate import sample_flip_group
 from emx_dbs.rasterize import rasterize_config
 from emx_dbs.reporting import write_layout_preview
 from emx_dbs.tank_generator import (
@@ -54,6 +56,31 @@ def test_dual_core_vco_tank_config_rasterizes_generated_seed(tmp_path):
     assert maskset.masks["m9"].any()
     assert maskset.masks["m8"].any()
     assert maskset.masks["v8"].any()
+    assert int(maskset.mutable_masks["m8"].sum()) == 0
+    assert int(maskset.mutable_masks["v8"].sum()) == 0
+    assert int(maskset.fixed_masks["m8"].sum()) == int(maskset.masks["m8"].sum())
+    assert int(maskset.fixed_masks["v8"].sum()) == int(maskset.masks["v8"].sum())
+
+    rows, cols = np.nonzero(maskset.masks["v8"])
+    for row, col in zip(rows.tolist(), cols.tolist()):
+        x_um, y_um = maskset.grids["v8"].index_center(int(row), int(col))
+        m9_idx = maskset.grids["m9"].xy_to_index(x_um, y_um)
+        assert m9_idx is not None
+        m9_row, m9_col = m9_idx
+        assert maskset.masks["m9"][m9_row, m9_col]
+        assert maskset.fixed_masks["m9"][m9_row, m9_col]
+        assert not maskset.mutable_masks["m9"][m9_row, m9_col]
+
+
+def test_dual_core_vco_tank_default_dbs_moves_only_m9(tmp_path):
+    gds = generate_dual_core_vco_tank_gds(tmp_path / "tank.gds")
+    config = write_dual_core_vco_tank_config(tmp_path / "tank.local.yaml", gds)
+    cfg = load_config(config)
+    maskset = rasterize_config(cfg)
+
+    rng = np.random.default_rng(33)
+    for _ in range(20):
+        assert {layer for layer, _, _ in sample_flip_group(maskset, cfg.dbs, rng)} == {"m9"}
 
 
 def test_dual_core_vco_tank_ports_are_on_feed_edges_and_legal(tmp_path):

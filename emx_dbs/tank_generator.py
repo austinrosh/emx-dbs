@@ -140,6 +140,26 @@ def dual_core_vco_tank_config(
                     top_y,
                 ],
             },
+            {
+                "name": "fixed_m9_left_v8_enclosure",
+                "layers": ["m9"],
+                "bbox_um": _left_v8_enclosure_bbox(geom),
+            },
+            {
+                "name": "fixed_m9_right_v8_enclosure",
+                "layers": ["m9"],
+                "bbox_um": _right_v8_enclosure_bbox(geom),
+            },
+            {
+                "name": "fixed_m8_center_trace",
+                "layers": ["m8"],
+                "bbox_um": _m8_region_bbox(geom),
+            },
+            {
+                "name": "fixed_v8_overlap_trace",
+                "layers": ["v8"],
+                "bbox_um": _m8_region_bbox(geom),
+            },
         ],
         "ports": _config_ports(geom),
         "connectivity": {
@@ -432,6 +452,18 @@ def _m8_region_bbox(geom: DualCoreVcoTankGeometry) -> List[float]:
     y0 = geom.core_height_um / 2.0 - geom.m8_trace_width_um / 2.0
     y1 = y0 + geom.m8_trace_width_um
     return [0.0, y0, geom.core_width_um, y1]
+
+
+def _left_v8_enclosure_bbox(geom: DualCoreVcoTankGeometry) -> List[float]:
+    y0 = geom.core_height_um / 2.0 - geom.m8_trace_width_um / 2.0
+    y1 = y0 + geom.m8_trace_width_um
+    return [0.0, y0, geom.m9_ring_width_um, y1]
+
+
+def _right_v8_enclosure_bbox(geom: DualCoreVcoTankGeometry) -> List[float]:
+    y0 = geom.core_height_um / 2.0 - geom.m8_trace_width_um / 2.0
+    y1 = y0 + geom.m8_trace_width_um
+    return [geom.core_width_um - geom.m9_ring_width_um, y0, geom.core_width_um, y1]
 
 
 def _has_guard_ring(geom: DualCoreVcoTankGeometry) -> bool:

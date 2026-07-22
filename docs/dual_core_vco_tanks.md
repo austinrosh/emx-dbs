@@ -13,6 +13,8 @@ The default generator emits an N16-oriented square-pixel seed:
 - port labels are placed on the outer feed edges
 - top cell: `dual_core_vco_tank`
 
+Generated configs make only `m9` mutable. The `m8` center trace and `v8` overlap trace remain represented in the rasterized masks and candidate GDS, but they are marked fixed so DBS cannot delete the lower stack while exploring M9 pixels. The M9 pixels directly under active V8 contacts are also fixed on, preserving via enclosure by construction.
+
 Generate a default seed, local config, and preview:
 
 ```bash
@@ -89,7 +91,7 @@ Add `--include-guard-ports` when you want the generated GDS/config to include gu
 
 ## Corner Overlap
 
-Generated configs enable `drc.allow_same_layer_diagonal_contact` and `drc.corner_overlap_bridge` by default. With both flags on, diagonal-only same-layer pixel contacts are considered connected during legality checks, and candidate GDS export adds a DRC-sized diamond patch at the shared pixel corner. The layout preview draws these patches as orange corner-overlap bridge markers on top of the pixel grid. The tank notebook includes deterministic M9-only trial candidates with M8 and V8 held fixed so the bridge patches are easy to inspect.
+Generated configs enable `drc.allow_same_layer_diagonal_contact` and `drc.corner_overlap_bridge` by default. With both flags on, diagonal-only same-layer pixel contacts are considered connected during legality checks, and candidate GDS export adds a DRC-sized diamond patch at the shared pixel corner. The layout preview draws these patches as orange corner-overlap bridge markers on top of the pixel grid. The tank notebook includes deterministic M9-only trial candidates with M8 and V8 held fixed, plus layer legends, so the bridge patches and lower-stack context are easy to inspect.
 
 ## DBS Use
 
