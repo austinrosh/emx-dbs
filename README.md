@@ -170,6 +170,8 @@ For an end-to-end notebook covering generation, clean matplotlib visualization, 
 
 For a broader GDS workflow notebook covering raw GDS import/inspection, custom GDS generation, candidate export, EMX port naming conventions, process-file layer mapping, and generated EMX CLI command structure, open `notebooks/gds_import_generation_export_emx_ports.ipynb`.
 
+For a detailed start-to-finish runbook for inverse-designing the dual-core VCO tank with EMX-backed DBS, see [`docs/dual_core_vco_end_to_end.md`](docs/dual_core_vco_end_to_end.md).
+
 For a background run:
 
 ```bash
@@ -195,6 +197,7 @@ See:
 - `docs/quickstart.md`
 - `docs/configuration_reference.md`
 - `docs/setup_for_emx.md`
+- `docs/dual_core_vco_end_to_end.md`
 - `docs/dual_core_vco_tanks.md`
 - `notebooks/dual_core_vco_tank_end_to_end.ipynb`
 - `notebooks/gds_import_generation_export_emx_ports.ipynb`

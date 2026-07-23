@@ -2,7 +2,9 @@
 
 `emx-dbs` includes a small parametric generator for the dual-core VCO tank family used as the first target structure class.
 
-For an executable walkthrough with clean matplotlib visualizations, M9-only DBS-style corner-overlap trials, parameter sweeps, export, a custom objective skeleton, and a symmetry-aware optimization-loop skeleton, open `notebooks/dual_core_vco_tank_end_to_end.ipynb`.
+For a detailed start-to-finish guide covering install, seed generation, local YAML edits, real EMX setup, differential-Q objective configuration, DBS execution, monitoring, and post-processing, see [`dual_core_vco_end_to_end.md`](dual_core_vco_end_to_end.md).
+
+For an executable walkthrough with clean matplotlib visualizations, M9-only DBS-style corner-overlap trials, parameter sweeps, export, a custom objective skeleton, and a symmetry-aware optimization-loop skeleton, open [`notebooks/dual_core_vco_tank_end_to_end.ipynb`](../notebooks/dual_core_vco_tank_end_to_end.ipynb).
 
 The default generator emits an N16-oriented square-pixel seed:
 
