@@ -15,7 +15,7 @@ The default generator emits an N16-oriented square-pixel seed:
 - port labels are placed on the outer feed edges
 - top cell: `dual_core_vco_tank`
 
-Generated configs make only `m9` mutable. The `m8` center trace and `v8` overlap trace remain represented in the rasterized masks and candidate GDS, but they are marked fixed so DBS cannot delete the lower stack while exploring M9 pixels. The M9 pixels directly under active V8 contacts are also fixed on, preserving via enclosure by construction.
+Generated configs make only `m9` mutable and enable x/y symmetric DBS moves about the tank center. The `m8` center trace and `v8` overlap trace remain represented in the rasterized masks and candidate GDS, but they are marked fixed so DBS cannot delete the lower stack while exploring M9 pixels. The M9 pixels directly under active V8 contacts are also fixed on, preserving via enclosure by construction.
 
 Generate a default seed, local config, and preview:
 

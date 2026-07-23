@@ -190,6 +190,8 @@ def dual_core_vco_tank_config(
             "move_style": "probabilistic_independent_layer_flips",
             "metal_flip_count_weights": [0.5, 0.3, 0.2],
             "metal_flip_count_values": [1, 2, 3],
+            "symmetry_axes": ["x", "y"],
+            "symmetry_center_um": [geom.core_width_um / 2.0, geom.core_height_um / 2.0],
             "random_seed": 33,
         },
         "objective": {

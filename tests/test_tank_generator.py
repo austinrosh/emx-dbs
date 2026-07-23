@@ -53,6 +53,8 @@ def test_dual_core_vco_tank_config_rasterizes_generated_seed(tmp_path):
     maskset = rasterize_config(cfg)
 
     assert cfg.run.run_id == "tank_test"
+    assert cfg.dbs.symmetry_axes == ["x", "y"]
+    assert cfg.dbs.symmetry_center_um == (165.0, 165.0)
     assert maskset.masks["m9"].any()
     assert maskset.masks["m8"].any()
     assert maskset.masks["v8"].any()

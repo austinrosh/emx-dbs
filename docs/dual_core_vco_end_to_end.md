@@ -427,6 +427,22 @@ emx-dbs preview-input local/dual_core_vco_ring33/config.real.local.yaml \
 
 For this block, a practical first objective is to maximize differential-mode Q at a target design frequency, for both primary and secondary tanks. The scalar FoM should improve only when both sides improve, so use the minimum of primary Q and secondary Q by default.
 
+Because the generated tank is highly symmetric, primary and secondary Q should be close when the geometry, port definitions, and EMX setup are symmetric. The objective below records both Q values plus balance metrics on every evaluation:
+
+- `q_primary`: differential-mode Q from `PP/PN`.
+- `q_secondary`: differential-mode Q from `SP/SN`.
+- `q_balance_abs`: `abs(q_primary - q_secondary)`.
+- `q_balance_rel`: `q_balance_abs / mean(q_primary, q_secondary)`.
+- `q_limited`: `min(q_primary, q_secondary)`.
+
+The default FoM is `q_limited`. Set `balance_weight` above zero if you want to explicitly penalize imbalance:
+
+```text
+FoM = q_limited - balance_weight * q_balance_abs
+```
+
+Keep `balance_weight: 0.0` for the first real runs. Once EMX port order and symmetry behavior are verified, a small value such as `0.05` to `0.2` can discourage asymmetric solutions without dominating Q.
+
 Create a local objective module:
 
 ```bash
@@ -477,6 +493,7 @@ def differential_q_at_target(touchstone_path: Path, metadata: dict, params: dict
     target_freq_ghz = float(params.get("target_freq_ghz", 11.0))
     aggregate = str(params.get("aggregate", "min"))
     min_real_ohm = float(params.get("min_real_ohm", 1.0e-3))
+    balance_weight = float(params.get("balance_weight", 0.0))
 
     needed_ports = max(max(primary_ports), max(secondary_ports))
     if sp.nports < needed_ports:
@@ -496,11 +513,16 @@ def differential_q_at_target(touchstone_path: Path, metadata: dict, params: dict
     z_secondary = _differential_impedance(z, secondary_ports[0], secondary_ports[1])
     q_primary = _q_from_impedance(z_primary, min_real_ohm)
     q_secondary = _q_from_impedance(z_secondary, min_real_ohm)
+    q_mean = float(np.nanmean([q_primary, q_secondary]))
+    q_balance_abs = abs(float(q_primary) - float(q_secondary))
+    q_balance_rel = q_balance_abs / max(abs(q_mean), 1.0e-30)
 
     if aggregate == "mean":
-        fom = float(np.nanmean([q_primary, q_secondary]))
+        base_q = q_mean
     else:
-        fom = float(np.nanmin([q_primary, q_secondary]))
+        base_q = float(np.nanmin([q_primary, q_secondary]))
+
+    fom = base_q - balance_weight * q_balance_abs
 
     valid = bool(np.isfinite(fom))
     return ObjectiveResult(
@@ -513,6 +535,11 @@ def differential_q_at_target(touchstone_path: Path, metadata: dict, params: dict
             "actual_freq_ghz": freq_ghz,
             "q_primary": float(q_primary),
             "q_secondary": float(q_secondary),
+            "q_limited": float(np.nanmin([q_primary, q_secondary])),
+            "q_mean": q_mean,
+            "q_balance_abs": q_balance_abs,
+            "q_balance_rel": q_balance_rel,
+            "balance_weight": balance_weight,
             "z_primary_real": float(np.real(z_primary)),
             "z_primary_imag": float(np.imag(z_primary)),
             "z_secondary_real": float(np.real(z_secondary)),
@@ -540,6 +567,7 @@ objective:
     target_freq_ghz: 11.0
     aggregate: min
     min_real_ohm: 1.0e-3
+    balance_weight: 0.0
 ```
 
 Port-order convention:
@@ -616,9 +644,29 @@ dbs:
   move_style: probabilistic_independent_layer_flips
   metal_flip_count_weights: [0.65, 0.25, 0.10]
   metal_flip_count_values: [1, 2, 4]
+  symmetry_axes: [x, y]
+  symmetry_center_um: [165.0, 165.0]
   random_seed: 33
   accept_equal: false
 ```
+
+The generated ring33 config already sets `symmetry_axes: [x, y]` and `symmetry_center_um: [165.0, 165.0]`. Keep those values unless you intentionally want unconstrained DBS moves.
+
+Symmetry conventions:
+
+- `x` mirrors a flip across the horizontal x-axis line, so `(x, y)` maps to `(x, 2*y0 - y)`.
+- `y` mirrors a flip across the vertical y-axis line, so `(x, y)` maps to `(2*x0 - x, y)`.
+- `[x, y]` enforces four-way symmetry about `(x0, y0)`.
+- `symmetry_center_um` is the physical center `[x0, y0]` in microns.
+
+For the default tank, the center is:
+
+```text
+x0 = core_width_um / 2 = 165 um
+y0 = core_height_um / 2 = 165 um
+```
+
+One sampled DBS move now means one independent symmetry orbit. With `[x, y]`, a requested one-pixel move can flip up to four M9 pixels: the original pixel, its left/right mirror, its top/bottom mirror, and its diagonal mirror. If a mirrored counterpart is fixed or outside the mutable window, that orbit is skipped so fixed M8, V8, port feeds, guard ring, and M9 under V8 remain protected.
 
 Start with a small number of evaluations. Increase `max_evaluations` only after:
 
@@ -660,12 +708,31 @@ Resume an interrupted run:
 emx-dbs resume local/dual_core_vco_ring33/runs/dual_core_vco_ring33_m9_dbs_001
 ```
 
-The CLI optimizer currently samples independent mutable M9 flips. The public notebooks include y-axis-symmetric DBS scaffolding for the VCO tank examples. Use the notebook path when symmetry must be enforced for every trial:
+To enforce only left/right symmetry, use:
 
-- `notebooks/dual_core_vco_tank_end_to_end.ipynb`
-- `notebooks/gds_import_generation_export_emx_ports.ipynb`
+```yaml
+dbs:
+  symmetry_axes: [y]
+  symmetry_center_um: [165.0, 165.0]
+```
 
-For production symmetric optimization, mirror every proposed M9 flip across the vertical centerline before evaluating the candidate. M8, V8, port feeds, guard ring, and M9 under active V8 should remain fixed.
+To enforce only top/bottom symmetry, use:
+
+```yaml
+dbs:
+  symmetry_axes: [x]
+  symmetry_center_um: [165.0, 165.0]
+```
+
+To disable symmetry for an exploratory run:
+
+```yaml
+dbs:
+  symmetry_axes: []
+  symmetry_center_um: null
+```
+
+For the VCO tank, `[x, y]` is the recommended production setting because the primary/secondary and left/right halves are intended to be highly symmetric. If Q balance gets worse even with `[x, y]`, inspect port order, feed geometry, EMX meshing, and process-file layer interpretation before trusting the result.
 
 ## 12. Understand The Run Directory
 
@@ -808,6 +875,7 @@ PY
 For production analysis, compare:
 
 - Primary and secondary differential Q at the target frequency.
+- Absolute and relative Q balance between primary and secondary.
 - Differential inductance at the target frequency.
 - Port ordering and sign convention.
 - Self-resonance relative to the design band.
@@ -856,7 +924,7 @@ The VCO tank notebook covers:
 - Port labels and feed locations.
 - M9-only DBS-style trial candidates.
 - Corner-overlap bridge visualization.
-- Y-axis symmetry scaffolding.
+- X/y symmetry scaffolding.
 - Objective and config skeletons for EMX-backed DBS.
 
 The GDS import notebook covers:

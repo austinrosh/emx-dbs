@@ -93,6 +93,8 @@ class DBSConfig(StrictModel):
     move_style: str = "probabilistic_independent_layer_flips"
     metal_flip_count_weights: List[float] = Field(default_factory=lambda: [1.0])
     metal_flip_count_values: List[int] = Field(default_factory=lambda: [1])
+    symmetry_axes: List[Literal["x", "y"]] = Field(default_factory=list)
+    symmetry_center_um: Optional[XY] = None
     random_seed: Optional[int] = None
     accept_equal: bool = False
 

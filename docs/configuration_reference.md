@@ -74,6 +74,8 @@ When diagonal contact and bridges are enabled, same-layer diagonal-only pixel co
 - `move_style`
 - `metal_flip_count_weights`
 - `metal_flip_count_values`
+- `symmetry_axes`: optional list containing `x`, `y`, or both. `x` mirrors flips across the horizontal line `y = symmetry_center_um[1]`; `y` mirrors flips across the vertical line `x = symmetry_center_um[0]`.
+- `symmetry_center_um`: optional `[x, y]` center in microns. If omitted, each layer grid's own center is used. For multi-layer structures, set this explicitly.
 - `random_seed`
 
 `objective`
